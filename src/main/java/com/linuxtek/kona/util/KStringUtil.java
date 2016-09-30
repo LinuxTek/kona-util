@@ -4,6 +4,7 @@
 package com.linuxtek.kona.util;
 
 import java.io.StringWriter;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -98,6 +100,13 @@ public class KStringUtil {
 		return buffer.toString();
 	}
 
+
+
+	public static String deAccent(String str) {
+	    String nfdNormalizedString = Normalizer.normalize(str, Normalizer.Form.NFD); 
+	    Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+	    return pattern.matcher(nfdNormalizedString).replaceAll("");
+	}
 
 	public static String join(Object[] s, String delimiter) {
         logger.debug("join(Object[]) called");
@@ -437,19 +446,21 @@ public class KStringUtil {
         return KClassUtil.toJson(o);
 	}
     
-	@SuppressWarnings("rawtypes")
-	public static Map toMap2(String json) {
+	public static Map<String,Object> toMap(String json) {
         if (json == null) return null;
+        
 		try {
             logger.debug("toMap called for json string: " + json);
-			return mapper.readValue(json, HashMap.class);
+            return mapper.readValue(json, new TypeReference<Map<String, Object>>(){});
 		} catch (Exception e) {
             logger.error(e);
             return null;
 		}
 	}
     
-	public static Map<String,Object> toMap(String json) {
+	// NOTE: this converts all values to String
+	// FIXME: parseComplexJSON needs logic to determine the correct type to return
+	public static Map<String,Object> toMap2(String json) {
 		if (json == null) return null;
 		return parseComplexJSON(json); 
 	}
@@ -489,9 +500,12 @@ public class KStringUtil {
     
 	private static Map<String, Object> parseComplexJSON(String jsonstr) {
         Map<String, Object> respdata = new HashMap<String, Object>();
+        
         JsonFactory jfac = new JsonFactory();
+        
         try {
             JsonParser jParser = jfac.createParser(jsonstr);
+            
             while (jParser.nextToken() != null) {
                 if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
                     respdata.put("result", readJSONArray(jParser));
@@ -509,12 +523,15 @@ public class KStringUtil {
     }
     private static Map<String, Object> readJSONObject(JsonParser jParser) {
         Map<String, Object> jsonobject = new HashMap<String, Object>();
+        
         int jsoncounter = 1;
+        
         if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
             try {
                 while (jParser.nextToken() != JsonToken.END_OBJECT) {
                     if (jParser.getCurrentToken() == JsonToken.START_OBJECT) {
                         Map<String, Object> subjsonobj = readJSONObject(jParser);
+                        
                         if (jParser.getCurrentName() != null && !jParser.getCurrentName().trim().isEmpty()) {
                             jsonobject.put(jParser.getCurrentName(), subjsonobj);
                         } else {
@@ -523,6 +540,7 @@ public class KStringUtil {
                         }
                     } else if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
                         List<Object> subjsonarray = readJSONArray(jParser);
+                        
                         if (jParser.getCurrentName() != null && !jParser.getCurrentName().trim().isEmpty()) {
                             jsonobject.put(jParser.getCurrentName(), subjsonarray);
                         } else {
@@ -537,8 +555,10 @@ public class KStringUtil {
                 logger.error(ex);
             }
         }
+        
         return jsonobject;
     }
+    
     private static List<Object> readJSONArray(JsonParser jParser) {
         List<Object> jsonarray = new ArrayList<Object>();
         if (jParser.getCurrentToken() == JsonToken.START_ARRAY) {
