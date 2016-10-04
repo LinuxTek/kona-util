@@ -446,6 +446,19 @@ public class KStringUtil {
         return KClassUtil.toJson(o);
 	}
     
+
+    /*
+	public String toJson2 (Object message) {
+		if (message == null) return null;
+		try {
+			return mapper.writeValueAsString(message);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw (RuntimeException) e;
+		}
+	}
+    */
+
 	public static Map<String,Object> toMap(String json) {
         if (json == null) return null;
         
