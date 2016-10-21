@@ -206,7 +206,7 @@ public class KFileUtil {
 		out.close();
 	}
 
-	public static void writeFile(String filename, String text) throws IOException {
+	public static File writeFile(String filename, String text) throws IOException {
 		
 		File file = new File(filename);
 
@@ -215,23 +215,25 @@ public class KFileUtil {
 			throw new IOException("Unable to create path: "
 					+ file.getParentFile());
 		}
-        writeFile(file, text);
+        
+		return writeFile(file, text);
 	}
     
-	public static void writeFile(File file, String text) throws IOException {
+	public static File writeFile(File file, String text) throws IOException {
 		BufferedWriter out = new BufferedWriter(new FileWriter(file));
 		out.write(text);
 		out.flush();
 		out.close();
+        return file;
 	}
 
-	public static void writeFile(String filename, byte[] data) throws IOException {
+	public static File writeFile(String filename, byte[] data) throws IOException {
 		File f = new File(filename);
-		writeFile(f, data);
+		return writeFile(f, data);
 	}
 
 	// File object with full path to file
-	public static void writeFile(File file, byte[] data) throws IOException {
+	public static File writeFile(File file, byte[] data) throws IOException {
 		File parent = file.getParentFile();
         
         // parent may be null if file passed in is a relative file
@@ -245,16 +247,17 @@ public class KFileUtil {
 		out.close();
 
 		logger.debug("wrote file to: " + file.toString());
+        return file;
 	}
 
-	public static void writeFile(File file, URL url) throws IOException {
+	public static File writeFile(File file, URL url) throws IOException {
 		URLConnection uc = url.openConnection();
-		writeFile(file, toByteArray(uc.getInputStream()));
+		return writeFile(file, toByteArray(uc.getInputStream()));
 	}
 
-	public static void writeFile(String filename, URL url) throws IOException {
+	public static File writeFile(String filename, URL url) throws IOException {
 		File f = new File(filename);
-		writeFile(f, url);
+		return writeFile(f, url);
 	}
 
 	public static void writeFiles(String directory, Map<String, String> fileMap) throws IOException {
