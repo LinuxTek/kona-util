@@ -233,10 +233,13 @@ public class KFileUtil {
 	// File object with full path to file
 	public static void writeFile(File file, byte[] data) throws IOException {
 		File parent = file.getParentFile();
-		if (!parent.exists() && !parent.mkdirs()) {
+        
+        // parent may be null if file passed in is a relative file
+		if (parent != null && !parent.exists() && !parent.mkdirs()) {
 			throw new IOException("Unable to create path: "
 					+ file.getParentFile());
 		}
+        
 		OutputStream out = new FileOutputStream(file);
 		out.write(data);
 		out.close();
