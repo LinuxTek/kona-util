@@ -17,7 +17,11 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -69,6 +73,54 @@ public class KFileUtil {
 		}
 		return baos.toByteArray();
 	}
+    
+	public static List<byte[]> toByteArrayList(String folderPath, boolean recursive) throws IOException {
+		File file = new File(folderPath);
+		return toByteArrayList(file, recursive);
+	}
+    
+    /**
+     * Returns a sorted list of files contained in the directory.
+     * 
+     * @param folder
+     * @param recursive
+     * @return
+     */
+	public static List<File> getFilesForFolder(File folder, boolean recursive) {
+		List<File> fileList = new ArrayList<File>();
+		listFilesForFolder(fileList, folder, recursive);
+		  // File implements Comparable and sorts by pathname by default
+        Collections.sort(fileList);
+        return fileList;
+        
+	}
+    
+	private static void listFilesForFolder(final List<File> fileList, final File folder, boolean recursive) {
+	    for (final File fileEntry : folder.listFiles()) {
+	        if (fileEntry.isDirectory() && recursive) {
+	            listFilesForFolder(fileList, fileEntry, recursive);
+	        } else {
+                fileList.add(fileEntry);
+	        }
+	    }
+	}
+    
+	public static List<byte[]> toByteArrayList(File folder, boolean recursive) throws IOException {
+        if (!folder.isDirectory()) {
+        	throw new IllegalArgumentException("Folder is not a directory: " + folder.getAbsolutePath());
+        }
+        
+        List<File> fileList = getFilesForFolder(folder, recursive);
+        
+        List<byte[]> dataList = new ArrayList<byte[]>();
+        
+        for (File file : fileList) {
+            dataList.add(toByteArray(file));
+        }
+        
+        return dataList;
+	}
+
 
 	public static byte[] toByteArray(String filePath) throws IOException {
 		File file = new File(filePath);
