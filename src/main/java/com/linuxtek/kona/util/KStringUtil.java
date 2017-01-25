@@ -100,6 +100,18 @@ public class KStringUtil {
 		return buffer.toString();
 	}
 
+	public static List<String> split(String text, String delimiter) {
+	    String[] parts = text.split(delimiter);
+
+	    List<String> list = new ArrayList<String>();
+
+	    for (String part : parts) {
+	        list.add(part);
+	    }
+
+	    return list;
+	}
+
 
 
 	public static String deAccent(String str) {
