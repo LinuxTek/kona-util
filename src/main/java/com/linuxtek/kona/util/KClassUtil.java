@@ -62,13 +62,15 @@ public class KClassUtil {
 	}
 
 	public static <T> Collection<T> filterCollection(Collection<T> list, final Map<String,Object> filter) {
-	    if (filter == null) {
+	    if (filter == null || filter.keySet().size() == 0) {
 	        return list;
 	    }
 
 	    List<T> result = list.stream().filter(child -> {
 	        Map<String,Object> map = KClassUtil.toMap(child);
+
 	        boolean match = true;
+
 	        for (String key : filter.keySet()) {
 	            Object itemValue = map.get(key);
 	            Object filterValue = filter.get(key);
