@@ -18,11 +18,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.jdom.Document;
@@ -52,6 +54,43 @@ public class KClassUtil {
 
 		Class<?> c = obj.getClass();
 		return (toString(c, obj));
+	}
+
+	public static <T> Collection<T> filterCollection(Collection<T> list, String json) {
+	    Map<String,Object> filter = KStringUtil.toMap(json);
+	    return filterCollection(list, filter);
+	}
+
+	public static <T> Collection<T> filterCollection(Collection<T> list, final Map<String,Object> filter) {
+	    if (filter == null) {
+	        return list;
+	    }
+
+	    List<T> result = list.stream().filter(child -> {
+	        Map<String,Object> map = KClassUtil.toMap(child);
+	        boolean match = true;
+	        for (String key : filter.keySet()) {
+	            Object itemValue = map.get(key);
+	            Object filterValue = filter.get(key);
+	            if (itemValue == null && filterValue == null) {
+	                continue;
+	            }
+
+	            if (itemValue == null || filterValue == null) {
+	                match = false;
+	                break;
+	            }
+
+	            if (!itemValue.equals(filterValue)) {
+	                match = false;
+	                break;
+	            }
+	        }
+
+	        return match;
+	    }).collect(Collectors.toList());
+
+	    return result;
 	}
 
 	public static String toString(Class<?> c, Object obj) {
