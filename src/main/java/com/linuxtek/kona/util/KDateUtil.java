@@ -177,7 +177,7 @@ public class KDateUtil
 			return parseJson(input, null);
 		} catch (ParseException e) {
             logger.error(e);
-            return null;
+            throw e;
 		}
     }
     
