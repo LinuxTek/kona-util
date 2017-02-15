@@ -62,18 +62,32 @@ public class KClassUtil {
 	}
 
 	public static <T> Collection<T> filterCollection(Collection<T> list, final Map<String,Object> filter) {
+	    //logger.debug("KClassUtil: filterConnection: "
+	    //        + "\nlist: " + list
+	    //        + "\nfilter: " + filter);
+
 	    if (filter == null || filter.keySet().size() == 0) {
 	        return list;
 	    }
 
-	    List<T> result = list.stream().filter(child -> {
-	        Map<String,Object> map = KClassUtil.toMap(child);
+	    List<T> result = list.stream().filter(item -> {
+	        Map<String,Object> map = KClassUtil.toMap(item);
+
+	        //logger.debug("item object: " + item);
+	        //logger.debug("item map: " + map);
 
 	        boolean match = true;
 
 	        for (String key : filter.keySet()) {
+
 	            Object itemValue = map.get(key);
+
 	            Object filterValue = filter.get(key);
+
+	            //logger.debug("checking key: " + key
+	            //        + "\nitemValue: " + itemValue
+	            //        + "\nfilterValue: " + filterValue);
+
 	            if (itemValue == null && filterValue == null) {
 	                continue;
 	            }
@@ -89,8 +103,12 @@ public class KClassUtil {
 	            }
 	        }
 
+	        //logger.debug("item matched: [" + match + "]: " + item);
+
 	        return match;
 	    }).collect(Collectors.toList());
+	    
+	    //logger.debug("KClassUtil: filterCollection: result: " + result);
 
 	    return result;
 	}
@@ -100,7 +118,7 @@ public class KClassUtil {
 			return (null);
 		}
 
-        logger.debug("toString: class: " + c);
+        //logger.debug("toString: class: " + c);
         
 		StringBuffer s = new StringBuffer();
 
@@ -171,7 +189,7 @@ public class KClassUtil {
 	}
     
 	public static <T> T fromJson(String json, Class<T> clazz) {
-        logger.debug("fromJson: " + json);
+        //logger.debug("fromJson: " + json);
         
 		ObjectMapper mapper = new ObjectMapper();
         mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
@@ -188,7 +206,7 @@ public class KClassUtil {
 	}
     
 	public static <T> T fromJson(String json, TypeReference<T> typeRef) {
-        logger.debug("fromJson: " + json);
+        //logger.debug("fromJson: " + json);
 		ObjectMapper mapper = new ObjectMapper();
         mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         T t = null;
@@ -202,35 +220,58 @@ public class KClassUtil {
 	}
     
 	public static Map<String,Object> toMap(Object o) {
-       return toMap(o, false, true); 
+       return toMap(o, false, true, true); 
 	}
     
 	public static Map<String,Object> toMap(Object o, boolean includeClassName) {
-        return toMap(o, includeClassName, true);
+        return toMap(o, includeClassName, true, true);
         
 	}
-    
-	public static Map<String,Object> toMap(Object o, boolean includeClassName, boolean includePrivate) {
-		Map<String,Object> map = new HashMap<String,Object>();
-        
-        if (includeClassName) {
-        	map.put("class", getClassName(o, true));
-        }
-		Field[] fields = o.getClass().getDeclaredFields();
-		for (Field f : fields) {
-			try {
-				// setAccessible to true to allow reading of private members
-				f.setAccessible(includePrivate);
-				Object value = (f.get(o));
-                map.put(f.getName(), value);
-			} catch (Exception e) {
-				logger.warn("Unable to access field: " + f.getName() + "\n"
-						+ e.getMessage());
-			}
-		}
-        return map;
+
+	public static Map<String,Object> toMap(Object o, boolean includeClassName, boolean includePrivate, boolean accessInheritedFields) {
+	    Map<String,Object> map = new HashMap<String,Object>();
+
+	    if (includeClassName) {
+	        map.put("class", getClassName(o, true));
+	    }
+
+	    Class<?> current = o.getClass();
+	    
+	    List<Class<?>> classList = new ArrayList<Class<?>>();
+
+	    while (current != null) {
+	        // add super classes at the beginning of the array
+	        classList.add(0, current);
+
+	        if (accessInheritedFields) {
+	            current = current.getSuperclass();
+	        } else {
+	            current = null;
+	        }
+	    }
+
+	    // loop over classes from super to base
+	    for (Class<?> clazz : classList) { 
+	        Field[] fields = clazz.getDeclaredFields();
+
+	        for (Field f : fields) {
+	            try {
+	                // setAccessible to true to allow reading of private members
+	                f.setAccessible(includePrivate);
+	                Object value = (f.get(o));
+	                map.put(f.getName(), value);
+
+	                //logger.debug("KClassUtil: toMap: field name: " + f.getName() + "  value: " + value);
+	            } catch (Exception e) {
+	                logger.warn("Unable to access field: " + f.getName() + "\n"
+	                        + e.getMessage());
+	            }
+	        } 
+	    }
+
+	    return map;
 	}
-    
+
 
     
 	public static String getClassName(Object o, boolean autoboxPrimitives) {
@@ -412,7 +453,7 @@ public class KClassUtil {
 
 					// if types is null, return first public method found
 					if (types == null) {
-						logger.debug("no types: found method");
+						//logger.debug("no types: found method");
 						method = methods[i];
 						break;
 					}
@@ -428,7 +469,7 @@ public class KClassUtil {
 					}
 
 					if (typesMatch) {
-						logger.debug("typesMatch: found method");
+						//logger.debug("typesMatch: found method");
 						method = methods[i];
 						break;
 					}
@@ -455,27 +496,27 @@ public class KClassUtil {
 		Object[] args = { value };
 
 		Class<?> c = clazz;
-		logger.debug("clazz name: " + clazz.getName());
+		//logger.debug("clazz name: " + clazz.getName());
         
         // since java.lang.String does not have a valueOf(String) method
 		// let's check for it and simply return the value.
 		if (clazz.getName().equals("java.lang.String")) {
 			result = (T) c.cast(value);
-            logger.debug("valueOf String is value itself: " + result);
+            //logger.debug("valueOf String is value itself: " + result);
             return result;
 		}
         
 		if (clazz.getName().equals("java.util.Date")) {
 			Long time = Long.valueOf(value);
 			result = (T) new Date(time);
-            logger.debug("valueOf Date value: " + result);
+            //logger.debug("valueOf Date value: " + result);
             return result;
 		}
 		
 		if (clazz.getName().equals("java.util.List")) {
-			logger.debug("valueOf: have list: " + value);
+			//logger.debug("valueOf: have list: " + value);
 			List<Object> list = KStringUtil.toList(value);
-			logger.debug("valueOf: converted to object: " + KClassUtil.toString(list));
+			//logger.debug("valueOf: converted to object: " + KClassUtil.toString(list));
 			result = (T) list;
             return result;
 		}
@@ -486,28 +527,28 @@ public class KClassUtil {
 		if (clazz.isPrimitive()) {
 			String className = clazz.getName().toLowerCase();
 			if (className.contains("boolean")) {
-				logger.debug("valueOf(): forcing class to java.lang.Boolean");
+				//logger.debug("valueOf(): forcing class to java.lang.Boolean");
 				c = Boolean.class;
 			} else if (className.contains("long")) {
-				logger.debug("valueOf(): forcing class to java.lang.Long");
+				//logger.debug("valueOf(): forcing class to java.lang.Long");
 				c = Long.class;
 			} else if (className.contains("int")) {
-				logger.debug("valueOf(): forcing class to java.lang.Integer");
+				//logger.debug("valueOf(): forcing class to java.lang.Integer");
 				c = Integer.class;
 			} else if (className.contains("byte")) {
-				logger.debug("valueOf(): forcing class to java.lang.Byte");
+				//logger.debug("valueOf(): forcing class to java.lang.Byte");
 				c = Byte.class;
 			} else if (className.contains("short")) {
-				logger.debug("valueOf(): forcing class to java.lang.Short");
+				//logger.debug("valueOf(): forcing class to java.lang.Short");
 				c = Short.class;
 			} else if (className.contains("float")) {
-				logger.debug("valueOf(): forcing class to java.lang.Float");
+				//logger.debug("valueOf(): forcing class to java.lang.Float");
 				c = Float.class;
 			} else if (className.contains("double")) {
-				logger.debug("valueOf(): forcing class to java.lang.Double");
+				//logger.debug("valueOf(): forcing class to java.lang.Double");
 				c = Double.class;
 			} else if (className.contains("char")) {
-				logger.debug("valueOf(): forcing class to java.lang.Char");
+				//logger.debug("valueOf(): forcing class to java.lang.Char");
 				c = Character.class;
 			}
 		}
@@ -515,11 +556,11 @@ public class KClassUtil {
 		Method m = getMethod(c, "valueOf", types, args);
 
 		if (m == null) {
-			logger.debug("valueOf not found for: " + clazz.getName());
+			//logger.debug("valueOf not found for: " + clazz.getName());
 			return (null);
 		}
 
-		logger.debug("found valueOf method for: " + clazz.getName());
+		//logger.debug("found valueOf method for: " + clazz.getName());
 
 		try {
 			// result = clazz.cast(m.invoke(null, value));

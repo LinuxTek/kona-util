@@ -427,13 +427,16 @@ public class KStringUtil {
 	@SuppressWarnings("rawtypes")
 	public static String toJson(List list) {
         if (list == null) return null;
+
         StringWriter sw = new StringWriter();
+
         try {
 			mapper.writeValue(sw, list);
 		} catch (Exception e) {
             logger.error(e);
             return null;
 		}
+
         return sw.toString();
 	}
     
@@ -504,6 +507,7 @@ public class KStringUtil {
 	@SuppressWarnings("rawtypes")
 	public static List toList(String json) {
         if (json == null) return null;
+
 		try {
             logger.debug("toList called for json string: " + json);
 			return mapper.readValue(json, List.class);
@@ -512,6 +516,7 @@ public class KStringUtil {
             return null;
 		}
 	}
+
     
     // Normally s.replaceAll(regex, repl) is good enough but when s
 	// contains backslashes or dollar signs, the result can be unexpected.
